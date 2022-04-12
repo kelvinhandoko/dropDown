@@ -1,48 +1,55 @@
 import { Select } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Country, City } from 'country-state-city';
 
 export default function ComboBox() {
   const [country, setCountry] = useState([]);
-  const [region,setRegion] = useState("")
-  const options = {
-    method: 'GET',
-    mode: 'cors',
-    headers: {
-      Accept: 'application/json',
-    },
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [city, setCity] = useState([]);
+
+  useEffect(() => {
+    const data = Country.getAllCountries();
+    const allCountry = data.map(e => e.name);
+    const sortedCountry = allCountry.sort();
+    setCountry(sortedCountry);
+  }, [country]);
+
+  const fetchCity = () => {
+    const data = Country.getAllCountries();
+    const countryData = data.filter(e => e.name === selectedCountry);
+    const countryCode = countryData[0].isoCode;
+    const cityData = City.getCitiesOfCountry(countryCode);
+    const allCities = cityData.map(e => e.name);
+    setCity(allCities);
   };
-  
-  async function fetchData() {
-    const response = await fetch(`https://restcountries.com/v3.1/region/${region}`, options);
-    const data = await response.json();
-    if(!response) return
-    const allCountry = data.map(e => e.name.common);
-    const sortedData = allCountry.sort();
-    setCountry(sortedData);
-  }
+
+  const handleSelectedCountry = e => {
+    setSelectedCountry(e.target.value);
+  };
+
   
 
-  const handleOption = e => setRegion(e.target.value)
   return (
     <>
-     <Select placeholder="Select region" onChange={handleOption} onClick={fetchData} w="150px" mr={4}>
-     <option value="africa">africa</option>
-     <option value="Americas">Americas</option>
-     <option value="Asia">Asia</option>
-     <option value="Europe">Europe</option>
-     <option value="Oceania">Oceania</option>
+      <Select
+        placeholder="Select country"
+        w="150px"
+        onChange={handleSelectedCountry}
+      >
+        {country.map((e, i) => (
+          <option value={e} key={i}>
+            {e}
+          </option>
+        ))}
+      </Select>
 
-    </Select>
-
-     <Select placeholder="Select option"  w="150px" mr={4}>
-      {country.map((e, i) => (
-        <option value={e} key={i}>
-         {e}
-        </option>
-      ))}
-      
-    </Select>
+      <Select placeholder="Select city" onClick={fetchCity}  w="150px" mr={4}>
+        {city.map((e, i) => (
+          <option value={e} key={i}>
+            {e}
+          </option>
+        ))}
+      </Select>
     </>
-   
   );
 }
